@@ -82,7 +82,6 @@
       <input type="text" id="student-name" class="name-input" placeholder="본인 이름을 입력하세요 (예: 홍길동)">
     </div>
     
-    <!-- ✅ '학습결과'로 변경된 부분 -->
     <div class="category-title">📊 학습결과</div>
     <div id="stats-card-container"></div>
 
@@ -106,7 +105,6 @@
   <div id="stats-screen" class="screen">
     <div class="quiz-header">
       <button class="back-btn" onclick="returnToDashboard()">← 뒤로가기</button>
-      <!-- ✅ '학습결과'로 변경된 부분 -->
       <div>학습결과</div>
     </div>
     <div class="result-box" style="margin-bottom: 25px;">
@@ -193,7 +191,6 @@
       card.className = 'category-card stats-card';
       card.onclick = () => openStats();
       card.innerHTML = `
-        <!-- ✅ '결과 보기'로 변경된 부분 -->
         <div class="category-name">📊 결과 보기</div>
         <div class="progress-info">
           <span>전체 정답률: ${accuracy}% (${overallStats.totalCorrect}/${overallStats.totalAnswered})</span>
@@ -401,10 +398,9 @@
         const studentName = document.getElementById('student-name').value.trim();
         const catTitle = quizDatabase[currentCategoryId].title;
         
-        // ⬇️ 아래 따옴표 안에 복사한 '웹 앱 URL'을 다시 넣어주세요!
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbyNW5S4pildU0M4TyUJwaCzapENj74Zw0-eO_DyowCZWliPgs66MfHc7Cd4SamyGzGg/exec";
 
-        if(googleScriptUrl !== "여기에_복사한_URL_붙여넣기") {
+        if (googleScriptUrl) {
           fetch(`${googleScriptUrl}?name=${encodeURIComponent(studentName)}&category=${encodeURIComponent(catTitle)}&score=${score}&total=${currentQuestions.length}`, {
             mode: 'no-cors'
           }).catch(err => console.log(err));
