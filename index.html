@@ -125,7 +125,6 @@
     <div id="question-box">문제를 불러오는 중...</div>
     <div id="options-container"></div>
     <div id="feedback"></div>
-    <!-- ✅ 원클릭 넥스트 도입으로 '다음 문제' 버튼이 사라졌습니다! -->
   </div>
 
   <div id="stats-screen" class="screen">
@@ -472,7 +471,7 @@
       
       const noteId = `${currentQuiz.categoryId}::${currentQuiz.q}`;
       
-      // ✅ 스마트 원클릭 넥스트 대기 시간 설정 변수
+      // ✅ 스마트 원클릭 넥스트 대기 시간 설정 변수 (요청하신 시간으로 변경!)
       let delayTime = 1000;
 
       if (isCorrect) {
@@ -482,7 +481,7 @@
         score++;
         sessionCorrectQuestions.push({ categoryId: currentQuiz.categoryId, q: currentQuiz.q }); 
         delete wrongNotes[noteId];
-        delayTime = 700; // 맞히면 0.7초 만에 빠르게 이동!
+        delayTime = 500; // 맞히면 0.5초 만에 빠르게 이동!
       } else {
         clickedButton.classList.add("wrong-ans");
         allButtons[currentQuiz.a].classList.add("correct-ans");
@@ -497,7 +496,7 @@
           wrongCount: prevWrongCount + 1,
           lastDate: new Date().toISOString()
         };
-        delayTime = 1500; // 틀리면 정답을 볼 수 있게 1.5초 후 이동!
+        delayTime = 2000; // 틀리면 정답을 볼 수 있게 2.0초 후 이동!
       }
       
       localStorage.setItem('sntWrongNotes', JSON.stringify(wrongNotes));
