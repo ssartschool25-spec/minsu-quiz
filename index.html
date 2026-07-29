@@ -45,8 +45,13 @@
     .sticky-bottom-btn.ready { background-color: #28a745; cursor: pointer; box-shadow: 0 6px 15px rgba(40,167,69,0.3); animation: bounce 1s infinite alternate; }
     @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
 
-    .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; color: #555; }
+    .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; color: #555; }
     .back-btn { background: none; border: none; font-size: 16px; color: #0056b3; cursor: pointer; font-weight: bold; }
+    
+    /* ✅ 듀오링고 스타일 최상단 진행바 */
+    .duo-progress-container { width: 100%; height: 16px; background-color: #e5e5e5; border-radius: 8px; margin-bottom: 15px; overflow: hidden; }
+    .duo-progress-fill { height: 100%; background-color: #58cc02; border-radius: 8px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15); }
+
     #question-box { background: white; padding: 25px 20px; border-radius: 15px; font-size: 18px; font-weight: bold; color: #222; margin-bottom: 20px; line-height: 1.5; word-break: keep-all; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 2px solid #0056b3; }
     
     .option-btn { width: 100%; text-align: center; background-color: white; border: 2px solid #ddd; padding: 15px; font-size: 16px; font-weight: 500; border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -60,6 +65,13 @@
     .correct-text { color: #28a745; }
     .wrong-text { color: #dc3545; }
     
+    /* ✅ 강아지 쌤 응원 팝업 오버레이 */
+    .cheer-popup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+    .cheer-popup { background: white; padding: 30px; border-radius: 24px; text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-width: 80%; }
+    .cheer-popup img { width: 120px; height: 120px; border-radius: 50%; border: 5px solid #58cc02; margin-bottom: 15px; object-fit: cover; }
+    .cheer-popup h2 { color: #222; margin: 0 0 10px 0; font-size: 22px; font-weight: 900; word-break: keep-all; line-height: 1.4; }
+    @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
     .action-btn { background-color: #0056b3; color: white; border: none; padding: 16px 20px; font-size: 18px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: 900; margin-top: 20px; box-shadow: 0 4px 0 #004494; display: none; }
     .action-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #004494; }
     
@@ -86,6 +98,7 @@
 </head>
 <body>
 
+  <!-- 🟢 대시보드 (홈 화면) -->
   <div id="dashboard-screen" class="screen active-screen">
     <div class="header-area">
       <h1>민수네 복덕방</h1>
@@ -116,17 +129,25 @@
     <button id="start-mixed-btn" class="sticky-bottom-btn" onclick="startMixedQuiz()">단원을 선택해주세요</button>
   </div>
 
+  <!-- 🔵 퀴즈 화면 -->
   <div id="quiz-screen" class="screen">
     <div class="quiz-header">
       <button class="back-btn" onclick="returnToDashboard()">← 중단하기</button>
-      <div id="quiz-progress-text">1 / 10</div>
+      <div id="quiz-progress-text" style="font-size: 14px; font-weight: 900; color: #888;">1 / 10</div>
     </div>
+    
+    <!-- ✅ 듀오링고 스타일 상단 진행바 -->
+    <div class="duo-progress-container">
+      <div class="duo-progress-fill" id="duo-progress-bar"></div>
+    </div>
+
     <div id="quiz-source-tag" style="text-align:center; color:#0056b3; font-size:12px; font-weight:bold; margin-bottom:5px;"></div>
     <div id="question-box">문제를 불러오는 중...</div>
     <div id="options-container"></div>
     <div id="feedback"></div>
   </div>
 
+  <!-- 📊 학습결과 화면 -->
   <div id="stats-screen" class="screen">
     <div class="quiz-header">
       <button class="back-btn" onclick="returnToDashboard()">← 뒤로가기</button>
@@ -145,6 +166,7 @@
     <div id="history-list"></div>
   </div>
 
+  <!-- 🟠 결과 화면 -->
   <div id="result-screen" class="screen">
     <div class="result-box">
       <h2 style="margin-top:0;">🎉 퀴즈 완료!</h2>
@@ -153,6 +175,14 @@
       <div class="result-score" id="final-score-text">10 / 10</div>
       <div class="collection-text" id="collection-update-text">새로 수집한 정답: +0개</div>
       <button class="action-btn" style="display:block; margin-top:30px;" onclick="returnToDashboard()">목록으로 돌아가기</button>
+    </div>
+  </div>
+
+  <!-- ✅ 강아지 쌤 깜짝 응원 팝업 -->
+  <div class="cheer-popup-overlay" id="cheer-popup">
+    <div class="cheer-popup">
+      <img src="dog.jpg" alt="강아지 쌤" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1995/1995562.png'">
+      <h2 id="cheer-msg">절반 통과! 🎉<br>끝까지 뼈 맞아보자! 🦴</h2>
     </div>
   </div>
 
@@ -435,6 +465,9 @@
       score = 0;
       sessionCorrectQuestions = []; 
       
+      // 시작 시 진행바 초기화
+      document.getElementById("duo-progress-bar").style.width = "0%";
+      
       switchScreen('dashboard-screen', 'quiz-screen');
       loadQuestion();
     }
@@ -471,7 +504,7 @@
       
       const noteId = `${currentQuiz.categoryId}::${currentQuiz.q}`;
       
-      // ✅ 스마트 원클릭 넥스트 대기 시간 설정 변수 (요청하신 시간으로 변경!)
+      // ✅ 선생님 요청: 맞으면 0.5초, 틀리면 2.0초
       let delayTime = 1000;
 
       if (isCorrect) {
@@ -481,7 +514,7 @@
         score++;
         sessionCorrectQuestions.push({ categoryId: currentQuiz.categoryId, q: currentQuiz.q }); 
         delete wrongNotes[noteId];
-        delayTime = 500; // 맞히면 0.5초 만에 빠르게 이동!
+        delayTime = 500; 
       } else {
         clickedButton.classList.add("wrong-ans");
         allButtons[currentQuiz.a].classList.add("correct-ans");
@@ -496,7 +529,7 @@
           wrongCount: prevWrongCount + 1,
           lastDate: new Date().toISOString()
         };
-        delayTime = 2000; // 틀리면 정답을 볼 수 있게 2.0초 후 이동!
+        delayTime = 2000; 
       }
       
       localStorage.setItem('sntWrongNotes', JSON.stringify(wrongNotes));
@@ -504,7 +537,6 @@
       if (isCorrect) overallStats.totalCorrect++;
       localStorage.setItem('sntQuizStats', JSON.stringify(overallStats));
       
-      // ✅ '다음 문제' 버튼 없이 자동으로 넘어가는 기능
       setTimeout(() => {
         nextQuestion();
       }, delayTime);
@@ -512,48 +544,84 @@
 
     function nextQuestion() {
       currentIndex++;
+      
+      // ✅ 듀오링고 진행바 채우기 (현재 문제 위치에 맞게 % 계산)
+      const progressPercent = (currentIndex / currentQuestions.length) * 100;
+      document.getElementById("duo-progress-bar").style.width = `${progressPercent}%`;
+
+      // ✅ 절반 도달 시 강아지 쌤 팝업 (전체 문제가 4문제 이상일 때만 발동)
+      const halfwayPoint = Math.floor(currentQuestions.length / 2);
+      if (currentIndex === halfwayPoint && currentQuestions.length >= 4) {
+        const popup = document.getElementById('cheer-popup');
+        
+        // 재미를 위해 다양한 메시지를 랜덤하게 띄울 수도 있습니다.
+        const messages = [
+          "절반 통과! 🎉<br>끝까지 뼈 맞아보자! 🦴",
+          "벌써 절반이나 풀었어!<br>조금만 더 힘내! 🔥",
+          "진도 50% 달성!<br>틀린 건 오답노트가 기억할게 📝"
+        ];
+        document.getElementById('cheer-msg').innerHTML = messages[Math.floor(Math.random() * messages.length)];
+        
+        popup.style.display = 'flex';
+        
+        // 2초 동안 응원 화면을 보여주고 사라진 뒤 다음 로직 실행
+        setTimeout(() => {
+          popup.style.display = 'none';
+          checkQuizEnd();
+        }, 2000);
+        return; // 팝업이 뜨는 동안은 여기서 함수 실행을 잠깐 멈춤
+      }
+
+      checkQuizEnd();
+    }
+
+    // ✅ 마지막 문제인지 확인하고 퀴즈를 끝내거나 다음 문제로 넘어가는 함수
+    function checkQuizEnd() {
       if (currentIndex >= currentQuestions.length) {
-        
-        let newlyCollected = 0;
-        sessionCorrectQuestions.forEach(item => {
-          if (!studentProgress[item.categoryId]) {
-            studentProgress[item.categoryId] = [];
-          }
-          if (!studentProgress[item.categoryId].includes(item.q)) {
-            studentProgress[item.categoryId].push(item.q);
-            newlyCollected++;
-          }
-        });
-        
-        localStorage.setItem('sntQuizProgress_v2', JSON.stringify(studentProgress));
-        
-        const historyTitle = selectedCategories.length > 1 ? `혼합 단원 퀴즈 (${selectedCategories.length}개 챕터)` : quizDatabase[selectedCategories[0]].title;
-        
-        quizHistory.push({
-          date: new Date().toISOString(),
-          categoryId: selectedCategories.length > 1 ? "mixed" : selectedCategories[0],
-          categoryTitle: historyTitle,
-          score: score,
-          total: currentQuestions.length
-        });
-        if (quizHistory.length > 50) quizHistory = quizHistory.slice(quizHistory.length - 50);
-        localStorage.setItem('sntQuizHistory', JSON.stringify(quizHistory));
-
-        document.getElementById('final-score-text').textContent = `${score} / ${currentQuestions.length}`;
-        document.getElementById('collection-update-text').textContent = `새로 수집한 정답 도감: +${newlyCollected}개`;
-        switchScreen('quiz-screen', 'result-screen');
-
-        const studentName = document.getElementById('student-name').value.trim();
-        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbyNW5S4pildU0M4TyUJwaCzapENj74Zw0-eO_DyowCZWliPgs66MfHc7Cd4SamyGzGg/exec";
-
-        if (googleScriptUrl) {
-          fetch(`${googleScriptUrl}?name=${encodeURIComponent(studentName)}&category=${encodeURIComponent(historyTitle)}&score=${score}&total=${currentQuestions.length}`, {
-            mode: 'no-cors'
-          }).catch(err => console.log(err));
-        }
-
+        finishQuiz();
       } else {
         loadQuestion();
+      }
+    }
+
+    // ✅ 퀴즈 종료 시 처리되는 로직 모음
+    function finishQuiz() {
+      let newlyCollected = 0;
+      sessionCorrectQuestions.forEach(item => {
+        if (!studentProgress[item.categoryId]) {
+          studentProgress[item.categoryId] = [];
+        }
+        if (!studentProgress[item.categoryId].includes(item.q)) {
+          studentProgress[item.categoryId].push(item.q);
+          newlyCollected++;
+        }
+      });
+      
+      localStorage.setItem('sntQuizProgress_v2', JSON.stringify(studentProgress));
+      
+      const historyTitle = selectedCategories.length > 1 ? `혼합 단원 퀴즈 (${selectedCategories.length}개 챕터)` : quizDatabase[selectedCategories[0]].title;
+      
+      quizHistory.push({
+        date: new Date().toISOString(),
+        categoryId: selectedCategories.length > 1 ? "mixed" : selectedCategories[0],
+        categoryTitle: historyTitle,
+        score: score,
+        total: currentQuestions.length
+      });
+      if (quizHistory.length > 50) quizHistory = quizHistory.slice(quizHistory.length - 50);
+      localStorage.setItem('sntQuizHistory', JSON.stringify(quizHistory));
+
+      document.getElementById('final-score-text').textContent = `${score} / ${currentQuestions.length}`;
+      document.getElementById('collection-update-text').textContent = `새로 수집한 정답 도감: +${newlyCollected}개`;
+      switchScreen('quiz-screen', 'result-screen');
+
+      const studentName = document.getElementById('student-name').value.trim();
+      const googleScriptUrl = "https://script.google.com/macros/s/AKfycbyNW5S4pildU0M4TyUJwaCzapENj74Zw0-eO_DyowCZWliPgs66MfHc7Cd4SamyGzGg/exec";
+
+      if (googleScriptUrl) {
+        fetch(`${googleScriptUrl}?name=${encodeURIComponent(studentName)}&category=${encodeURIComponent(historyTitle)}&score=${score}&total=${currentQuestions.length}`, {
+          mode: 'no-cors'
+        }).catch(err => console.log(err));
       }
     }
 
