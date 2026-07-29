@@ -15,8 +15,8 @@
     .header-area { text-align: center; padding: 30px 20px 20px; background: white; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
     .header-area h1 { font-size: 24px; color: #333; margin: 0 0 5px 0; font-weight: 900; }
     
-    /* ✅ 강아지 귀가 잘리지 않도록 크기를 140px로 확대 */
-    .character-img { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 3px solid #0056b3; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-top: 10px; }
+    /* ✅ 자르는 기준점을 위쪽(top)으로 올려서 강아지 귀가 온전히 나오도록 수정 */
+    .character-img { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; object-position: top; border: 3px solid #0056b3; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-top: 10px; }
     
     .name-input-container { margin-bottom: 20px; }
     .name-input { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #0056b3; font-size: 16px; font-weight: bold; box-sizing: border-box; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.3s; }
@@ -101,7 +101,6 @@
   <!-- 🟢 대시보드 (홈 화면) -->
   <div id="dashboard-screen" class="screen active-screen">
     <div class="header-area">
-      <!-- ✅ 민수네 공부방으로 이름 변경 -->
       <h1>민수네 공부방</h1>
       <p style="font-size: 17px; font-weight: 700; color: #444; white-space: nowrap; letter-spacing: -0.5px; margin: 0 0 15px 0;">어차피 외워야 할 거, 뼈 맞고 빨리 끝내자 💀</p>
       <img src="dog.jpg" alt="귀여운 강아지 쌤" class="character-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1995/1995562.png'">
@@ -178,10 +177,10 @@
     </div>
   </div>
 
-  <!-- ✅ 강아지 쌤 깜짝 응원 팝업 -->
+  <!-- ✅ 강아지 쌤 팝업에도 자르는 기준점을 'top'으로 추가 -->
   <div class="cheer-popup-overlay" id="cheer-popup">
     <div class="cheer-popup">
-      <img src="dog.jpg" alt="강아지 쌤" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1995/1995562.png'">
+      <img src="dog.jpg" alt="강아지 쌤" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; object-position: top;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1995/1995562.png'">
       <h2 id="cheer-msg">절반 통과! 🎉<br>끝까지 뼈 맞아보자! 🦴</h2>
     </div>
   </div>
@@ -487,8 +486,6 @@
       optionsContainer.innerHTML = "";
       feedback.textContent = "";
 
-      // ✅ 3. 보기를 무작위로 섞어서 화면에 출력하기
-      // 원래 번호를 기억하도록 매핑한 뒤, 순서를 섞습니다.
       let shuffledOptions = currentQuiz.options.map((optText, idx) => {
         return { text: optText, originalIndex: idx };
       });
@@ -498,10 +495,8 @@
         const button = document.createElement("button");
         button.className = "option-btn";
         
-        // 보기 앞에 1, 2, 3 번호를 동적으로 다시 붙여줍니다.
         button.textContent = `${newIndex + 1}. ${optObj.text}`;
         
-        // 정답 체크를 위해 원래의 인덱스를 몰래 저장해둡니다.
         button.dataset.originalIndex = optObj.originalIndex;
         
         button.onclick = () => checkAnswer(optObj.originalIndex, button);
@@ -530,7 +525,6 @@
       } else {
         clickedButton.classList.add("wrong-ans");
         
-        // ✅ 섞인 보기들 중에서 진짜 정답인 버튼을 찾아 초록색으로 칠해줍니다.
         const correctBtn = Array.from(allButtons).find(btn => parseInt(btn.dataset.originalIndex) === currentQuiz.a);
         if (correctBtn) {
           correctBtn.classList.add("correct-ans");
