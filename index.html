@@ -25,10 +25,11 @@
     .category-card:active { transform: scale(0.98); border-color: #0056b3; }
     .category-name { font-size: 18px; font-weight: bold; color: #222; margin-bottom: 8px; }
     
-    .progress-info { display: flex; justify-content: space-between; font-size: 13px; color: #666; font-weight: bold; margin-bottom: 6px; }
-    .progress-bar-bg { width: 100%; height: 8px; background-color: #e9ecef; border-radius: 4px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background-color: #28a745; width: 0%; transition: width 0.5s ease-in-out; }
-    .score-badge { background-color: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+    /* ✅ 진도율 표시 및 푸른색 가로바 스타일 업그레이드 */
+    .progress-info { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #666; font-weight: bold; margin-bottom: 8px; }
+    .progress-bar-bg { width: 100%; height: 12px; background-color: #e9ecef; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #007aff, #0056b3); width: 0%; transition: width 0.8s ease-in-out; border-radius: 6px; }
+    .score-badge { background-color: #e6f2ff; color: #0056b3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 900; }
 
     .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; color: #555; }
     .back-btn { background: none; border: none; font-size: 16px; color: #0056b3; cursor: pointer; font-weight: bold; }
@@ -50,6 +51,7 @@
     
     .result-box { text-align: center; background: white; padding: 40px 20px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
     .result-score { font-size: 40px; font-weight: 900; color: #0056b3; margin: 15px 0; }
+    .collection-text { font-size: 16px; color: #28a745; font-weight: bold; margin-top: 10px; }
 
     .stats-card { border-color: #ffc107; background: linear-gradient(135deg, #fff9e6, #ffffff); }
     .stats-card:active { border-color: #ffc107; }
@@ -93,7 +95,7 @@
   <div id="quiz-screen" class="screen">
     <div class="quiz-header">
       <button class="back-btn" onclick="returnToDashboard()">← 뒤로가기</button>
-      <div id="quiz-progress-text">1 / 20</div>
+      <div id="quiz-progress-text">1 / 10</div>
     </div>
     <div id="question-box">문제를 불러오는 중...</div>
     <div id="options-container"></div>
@@ -112,20 +114,22 @@
       <div class="result-score" id="overall-accuracy-text">0%</div>
       <p style="color:#999; font-size:13px; margin:5px 0 0 0;" id="overall-count-text">아직 푼 문제가 없습니다</p>
     </div>
-    <div class="category-title">📚 단원별 최고 기록 요약</div>
+    <div class="category-title">📚 단원별 정답 도감 요약</div>
     <div id="stats-category-summary"></div>
     <div class="category-title">📝 오답노트</div>
     <div id="wrong-notes-list"></div>
-    <div class="category-title">🕒 학습 이력</div>
+    <div class="category-title">🕒 최근 학습 이력 (숏츠 모드)</div>
     <div id="history-list"></div>
   </div>
 
   <!-- 🟠 결과 화면 -->
   <div id="result-screen" class="screen">
     <div class="result-box">
-      <h2 style="margin-top:0;">🎉 학습 완료!</h2>
+      <h2 style="margin-top:0;">🎉 퀴즈 완료!</h2>
       <p style="color:#666; margin-bottom:5px;">수고하셨습니다. 점수가 전송되었습니다!</p>
-      <div class="result-score" id="final-score-text">20 / 20</div>
+      <p style="color:#0056b3; font-weight:bold; margin-bottom:5px;">이번 퀴즈 점수</p>
+      <div class="result-score" id="final-score-text">10 / 10</div>
+      <div class="collection-text" id="collection-update-text">새로 수집한 정답: +0개</div>
       <button class="action-btn" style="display:block; margin-top:30px;" onclick="returnToDashboard()">목록으로 돌아가기</button>
     </div>
   </div>
@@ -133,7 +137,7 @@
   <script>
     const quizDatabase = {
       "ch1": {
-        title: "1. 인권 보장과 헌법 (핵심 20제)",
+        title: "1. 인권 보장과 헌법",
         questions: [
           { q: "인권의 특징 중 인종, 성별, 종교 등과 관계없이 인류 구성원 모두가 가지는 성질은 무엇인가?", options: ["1. 보편성", "2. 천부성", "3. 불가침성", "4. 항구성", "5. 자연성"], a: 0 },
           { q: "1689년 영국에서 왕의 독재에 의회가 맞서 싸운 명예혁명의 결과로 발표되어 최초로 입헌군주정을 수립하게 한 문서는?", options: ["1. 대헌장", "2. 권리장전", "3. 독립선언문", "4. 인간과 시민의 권리 선언", "5. 세계 인권 선언"], a: 1 },
@@ -160,12 +164,13 @@
       "ch2": {
         title: "2. 시장 경제와 금융 (업데이트 예정)",
         questions: [
-          { q: "이곳에 2단원 문제가 들어갈 예정입니다. 정답은 1번입니다.", options: ["1. 정답", "2. 오답", "3. 오답"], a: 0 }
+          { q: "이곳에 2단원 문제가 들어갈 예정입니다. 정답은 1번입니다.", options: ["1. 정답", "2. 오답", "3. 오답"], a: 0 },
+          { q: "샘플 문제 2번입니다. 정답은 2번.", options: ["1. 오답", "2. 정답", "3. 오답"], a: 1 }
         ]
       }
     };
 
-    let studentProgress = JSON.parse(localStorage.getItem('sntQuizProgress')) || {};
+    let studentProgress = JSON.parse(localStorage.getItem('sntQuizProgress_v2')) || {};
     let overallStats = JSON.parse(localStorage.getItem('sntQuizStats')) || { totalAnswered: 0, totalCorrect: 0 };
     let wrongNotes = JSON.parse(localStorage.getItem('sntWrongNotes')) || {};
     let quizHistory = JSON.parse(localStorage.getItem('sntQuizHistory')) || [];
@@ -181,6 +186,7 @@
     let currentQuestions = [];
     let currentIndex = 0;
     let score = 0;
+    let sessionCorrectQuestions = []; 
 
     function renderStatsCard() {
       const container = document.getElementById('stats-card-container');
@@ -192,9 +198,9 @@
       card.onclick = () => openStats();
       card.innerHTML = `
         <div class="category-name">📊 결과 보기</div>
-        <div class="progress-info">
-          <span>전체 정답률: ${accuracy}% (${overallStats.totalCorrect}/${overallStats.totalAnswered})</span>
-          <span class="score-badge">오답노트 ${wrongCount}개</span>
+        <div style="font-size: 13px; color: #666; font-weight: bold;">
+          전체 정답률: ${accuracy}% (${overallStats.totalCorrect}/${overallStats.totalAnswered})
+          <span class="score-badge" style="float: right;">오답노트 ${wrongCount}개</span>
         </div>
       `;
       container.appendChild(card);
@@ -214,16 +220,16 @@
       summaryContainer.innerHTML = '';
       for (const [id, data] of Object.entries(quizDatabase)) {
         const totalQs = data.questions.length;
-        const bestScore = studentProgress[id] || 0;
-        const percentage = totalQs > 0 ? Math.round((bestScore / totalQs) * 100) : 0;
+        const masteredQs = studentProgress[id] ? studentProgress[id].length : 0;
+        const percentage = totalQs > 0 ? Math.round((masteredQs / totalQs) * 100) : 0;
         const row = document.createElement('div');
         row.className = 'summary-row';
         row.innerHTML = `
           <div>
             <div class="cat-name">${data.title}</div>
-            <div class="cat-score">최고 기록: ${bestScore} / ${totalQs}</div>
+            <div class="cat-score">수집한 정답 도감: ${masteredQs} / ${totalQs}</div>
           </div>
-          <span class="score-badge">${percentage}%</span>
+          <span class="score-badge" style="background-color: #e6f2ff; color: #0056b3;">${percentage}%</span>
         `;
         summaryContainer.appendChild(row);
       }
@@ -278,16 +284,18 @@
       listContainer.innerHTML = '';
       for (const [id, data] of Object.entries(quizDatabase)) {
         const totalQs = data.questions.length;
-        const bestScore = studentProgress[id] || 0;
-        const percentage = totalQs > 0 ? Math.round((bestScore / totalQs) * 100) : 0;
+        const masteredQs = studentProgress[id] ? studentProgress[id].length : 0;
+        const percentage = totalQs > 0 ? Math.round((masteredQs / totalQs) * 100) : 0;
         const card = document.createElement('div');
         card.className = 'category-card';
         card.onclick = () => startQuiz(id);
+        
+        // ✅ 각 단원 칸(네모칸) 아래에 푸른색 가로 바(Bar)가 돋보이도록 적용
         card.innerHTML = `
           <div class="category-name">${data.title}</div>
           <div class="progress-info">
-            <span>나의 최고 기록: ${bestScore} / ${totalQs}</span>
-            <span class="score-badge">${percentage}% 완료</span>
+            <span>도감 채우기: ${masteredQs} / ${totalQs}</span>
+            <span class="score-badge">${percentage}% 완성</span>
           </div>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" style="width: ${percentage}%"></div>
@@ -306,11 +314,39 @@
       }
       
       localStorage.setItem('sntStudentName', nameInput);
-
       currentCategoryId = categoryId;
-      currentQuestions = [...quizDatabase[categoryId].questions].sort(() => Math.random() - 0.5);
+      
+      const allCategoryQuestions = [...quizDatabase[categoryId].questions];
+      
+      const currentCategoryWrongQs = Object.values(wrongNotes)
+        .filter(note => note.categoryId === categoryId)
+        .map(note => note.question);
+        
+      const shuffledWrongQs = currentCategoryWrongQs.sort(() => Math.random() - 0.5);
+      const selectedWrongQTexts = shuffledWrongQs.slice(0, 2);
+      
+      let selectedWrongQuestions = [];
+      let remainingQuestions = [];
+      
+      allCategoryQuestions.forEach(qObj => {
+        if (selectedWrongQTexts.includes(qObj.q)) {
+          selectedWrongQuestions.push(qObj);
+        } else {
+          remainingQuestions.push(qObj);
+        }
+      });
+      
+      remainingQuestions.sort(() => Math.random() - 0.5);
+      const neededNormalCount = 10 - selectedWrongQuestions.length;
+      const selectedNormalQuestions = remainingQuestions.slice(0, neededNormalCount);
+      
+      currentQuestions = [...selectedWrongQuestions, ...selectedNormalQuestions];
+      currentQuestions.sort(() => Math.random() - 0.5);
+      
       currentIndex = 0;
       score = 0;
+      sessionCorrectQuestions = [];
+      
       switchScreen('dashboard-screen', 'quiz-screen');
       loadQuestion();
     }
@@ -350,6 +386,7 @@
         feedback.textContent = "⭕ 정답입니다!";
         feedback.className = "correct-text";
         score++;
+        sessionCorrectQuestions.push(currentQuiz.q); 
         delete wrongNotes[noteId];
       } else {
         clickedButton.classList.add("wrong-ans");
@@ -376,11 +413,20 @@
     function nextQuestion() {
       currentIndex++;
       if (currentIndex >= currentQuestions.length) {
-        const previousBest = studentProgress[currentCategoryId] || 0;
-        if (score > previousBest) {
-          studentProgress[currentCategoryId] = score;
-          localStorage.setItem('sntQuizProgress', JSON.stringify(studentProgress));
+        
+        if (!studentProgress[currentCategoryId]) {
+          studentProgress[currentCategoryId] = [];
         }
+        
+        let newlyCollected = 0;
+        sessionCorrectQuestions.forEach(qText => {
+          if (!studentProgress[currentCategoryId].includes(qText)) {
+            studentProgress[currentCategoryId].push(qText);
+            newlyCollected++;
+          }
+        });
+        
+        localStorage.setItem('sntQuizProgress_v2', JSON.stringify(studentProgress));
         
         quizHistory.push({
           date: new Date().toISOString(),
@@ -393,6 +439,7 @@
         localStorage.setItem('sntQuizHistory', JSON.stringify(quizHistory));
 
         document.getElementById('final-score-text').textContent = `${score} / ${currentQuestions.length}`;
+        document.getElementById('collection-update-text').textContent = `새로 수집한 정답 도감: +${newlyCollected}개`;
         switchScreen('quiz-screen', 'result-screen');
 
         const studentName = document.getElementById('student-name').value.trim();
