@@ -21,11 +21,16 @@
     .name-input:focus { outline: none; border-color: #ffc107; box-shadow: 0 4px 10px rgba(255, 193, 7, 0.2); }
 
     .category-title { font-size: 16px; font-weight: bold; color: #555; margin: 0 0 10px 10px; }
+    
+    /* ✅ 새롭게 추가된 문제 수 선택 버튼 스타일 */
+    .q-count-container { display: flex; gap: 8px; margin: 0 10px 20px 10px; }
+    .q-count-btn { flex: 1; padding: 12px 0; border: 2px solid #ddd; background: white; border-radius: 10px; font-size: 14px; font-weight: bold; color: #777; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .q-count-btn.active { border-color: #0056b3; background-color: #e6f2ff; color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,86,179,0.15); }
+    
     .category-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 2px solid #eee; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; }
     .category-card:active { transform: scale(0.98); border-color: #0056b3; }
     .category-name { font-size: 18px; font-weight: bold; color: #222; margin-bottom: 8px; }
     
-    /* ✅ 진도율 표시 및 푸른색 가로바 스타일 업그레이드 */
     .progress-info { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #666; font-weight: bold; margin-bottom: 8px; }
     .progress-bar-bg { width: 100%; height: 12px; background-color: #e9ecef; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
     .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #007aff, #0056b3); width: 0%; transition: width 0.8s ease-in-out; border-radius: 6px; }
@@ -87,6 +92,15 @@
     <div class="category-title">📊 학습결과</div>
     <div id="stats-card-container"></div>
 
+    <!-- ✅ 새롭게 추가된 문제 수 선택 영역 -->
+    <div class="category-title">⚙️ 출제 문제 수 선택</div>
+    <div class="q-count-container">
+      <button class="q-count-btn active" id="btn-count-10" onclick="setQuestionCount(10)">10개</button>
+      <button class="q-count-btn" id="btn-count-30" onclick="setQuestionCount(30)">30개</button>
+      <button class="q-count-btn" id="btn-count-50" onclick="setQuestionCount(50)">50개</button>
+      <button class="q-count-btn" id="btn-count-all" onclick="setQuestionCount('ALL')">전체</button>
+    </div>
+
     <div class="category-title">📚 통합사회 내신 퀴즈</div>
     <div id="category-list"></div>
   </div>
@@ -118,7 +132,7 @@
     <div id="stats-category-summary"></div>
     <div class="category-title">📝 오답노트</div>
     <div id="wrong-notes-list"></div>
-    <div class="category-title">🕒 최근 학습 이력 (숏츠 모드)</div>
+    <div class="category-title">🕒 최근 학습 이력</div>
     <div id="history-list"></div>
   </div>
 
@@ -135,6 +149,7 @@
   </div>
 
   <script>
+    // ✅ 4개 단원으로 확장된 데이터베이스
     const quizDatabase = {
       "ch1": {
         title: "1. 인권 보장과 헌법",
@@ -162,10 +177,21 @@
         ]
       },
       "ch2": {
-        title: "2. 시장 경제와 금융 (업데이트 예정)",
+        title: "2. 시장경제와 자산관리",
         questions: [
-          { q: "이곳에 2단원 문제가 들어갈 예정입니다. 정답은 1번입니다.", options: ["1. 정답", "2. 오답", "3. 오답"], a: 0 },
-          { q: "샘플 문제 2번입니다. 정답은 2번.", options: ["1. 오답", "2. 정답", "3. 오답"], a: 1 }
+          { q: "2단원 문제는 추후 업데이트 예정입니다. 정답은 1번입니다.", options: ["1. 정답", "2. 오답"], a: 0 }
+        ]
+      },
+      "ch3": {
+        title: "3. 정의와 사회불평등",
+        questions: [
+          { q: "3단원 문제는 추후 업데이트 예정입니다. 정답은 1번입니다.", options: ["1. 정답", "2. 오답"], a: 0 }
+        ]
+      },
+      "ch4": {
+        title: "4. 세계인구와 자원",
+        questions: [
+          { q: "4단원 문제는 추후 업데이트 예정입니다. 정답은 1번입니다.", options: ["1. 정답", "2. 오답"], a: 0 }
         ]
       }
     };
@@ -174,6 +200,9 @@
     let overallStats = JSON.parse(localStorage.getItem('sntQuizStats')) || { totalAnswered: 0, totalCorrect: 0 };
     let wrongNotes = JSON.parse(localStorage.getItem('sntWrongNotes')) || {};
     let quizHistory = JSON.parse(localStorage.getItem('sntQuizHistory')) || [];
+
+    // ✅ 사용자가 선택한 문제 수 변수 (기본값 10개)
+    let selectedQuestionCount = 10; 
 
     document.addEventListener("DOMContentLoaded", () => {
       const savedName = localStorage.getItem('sntStudentName');
@@ -187,6 +216,17 @@
     let currentIndex = 0;
     let score = 0;
     let sessionCorrectQuestions = []; 
+
+    // ✅ 문제 수 선택 버튼 동작 함수
+    function setQuestionCount(count) {
+      selectedQuestionCount = count;
+      document.querySelectorAll('.q-count-btn').forEach(btn => btn.classList.remove('active'));
+      
+      if(count === 10) document.getElementById('btn-count-10').classList.add('active');
+      else if(count === 30) document.getElementById('btn-count-30').classList.add('active');
+      else if(count === 50) document.getElementById('btn-count-50').classList.add('active');
+      else if(count === 'ALL') document.getElementById('btn-count-all').classList.add('active');
+    }
 
     function renderStatsCard() {
       const container = document.getElementById('stats-card-container');
@@ -290,7 +330,6 @@
         card.className = 'category-card';
         card.onclick = () => startQuiz(id);
         
-        // ✅ 각 단원 칸(네모칸) 아래에 푸른색 가로 바(Bar)가 돋보이도록 적용
         card.innerHTML = `
           <div class="category-name">${data.title}</div>
           <div class="progress-info">
@@ -317,13 +356,26 @@
       currentCategoryId = categoryId;
       
       const allCategoryQuestions = [...quizDatabase[categoryId].questions];
+      const totalAvailable = allCategoryQuestions.length;
       
+      // 출제할 목표 문제 수 계산 (사용자 선택 반영)
+      let targetCount = selectedQuestionCount === 'ALL' ? totalAvailable : selectedQuestionCount;
+      
+      // 만약 해당 단원의 전체 문제 수가 선택한 문제 수보다 적으면 가지고 있는 문제 수까지만 출제
+      if (targetCount > totalAvailable) {
+        targetCount = totalAvailable;
+      }
+
+      // 오답 복습 문제 추출 (전체 목표 문제 수의 20%를 오답으로 구성)
       const currentCategoryWrongQs = Object.values(wrongNotes)
         .filter(note => note.categoryId === categoryId)
         .map(note => note.question);
         
       const shuffledWrongQs = currentCategoryWrongQs.sort(() => Math.random() - 0.5);
-      const selectedWrongQTexts = shuffledWrongQs.slice(0, 2);
+      
+      // 오답 문제 할당량 (선택한 문제 수의 20% 적용, 내림)
+      const targetWrongCount = Math.floor(targetCount * 0.2);
+      const selectedWrongQTexts = shuffledWrongQs.slice(0, targetWrongCount);
       
       let selectedWrongQuestions = [];
       let remainingQuestions = [];
@@ -336,10 +388,12 @@
         }
       });
       
+      // 나머지 문제는 랜덤으로 섞어서 필요한 만큼만 채우기
       remainingQuestions.sort(() => Math.random() - 0.5);
-      const neededNormalCount = 10 - selectedWrongQuestions.length;
+      const neededNormalCount = targetCount - selectedWrongQuestions.length;
       const selectedNormalQuestions = remainingQuestions.slice(0, neededNormalCount);
       
+      // 최종 문제 셋팅 및 한 번 더 섞기
       currentQuestions = [...selectedWrongQuestions, ...selectedNormalQuestions];
       currentQuestions.sort(() => Math.random() - 0.5);
       
