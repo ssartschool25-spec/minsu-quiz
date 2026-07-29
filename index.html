@@ -22,19 +22,31 @@
 
     .category-title { font-size: 16px; font-weight: bold; color: #555; margin: 0 0 10px 10px; }
     
-    /* ✅ 새롭게 추가된 문제 수 선택 버튼 스타일 */
     .q-count-container { display: flex; gap: 8px; margin: 0 10px 20px 10px; }
     .q-count-btn { flex: 1; padding: 12px 0; border: 2px solid #ddd; background: white; border-radius: 10px; font-size: 14px; font-weight: bold; color: #777; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     .q-count-btn.active { border-color: #0056b3; background-color: #e6f2ff; color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,86,179,0.15); }
     
-    .category-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 2px solid #eee; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; }
-    .category-card:active { transform: scale(0.98); border-color: #0056b3; }
-    .category-name { font-size: 18px; font-weight: bold; color: #222; margin-bottom: 8px; }
+    /* ✅ 다중 선택을 위한 카드 스타일 업데이트 */
+    .category-card { position: relative; background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 2px solid #eee; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; }
+    .category-card:active { transform: scale(0.98); }
+    .category-card.selected { border-color: #28a745; background-color: #f4fff8; box-shadow: 0 4px 12px rgba(40,167,69,0.15); }
+    
+    /* ✅ 선택 확인용 체크 동그라미 */
+    .check-circle { position: absolute; top: 18px; right: 20px; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ccc; background: white; transition: all 0.2s; }
+    .category-card.selected .check-circle { border-color: #28a745; background: #28a745; color: white; text-align: center; line-height: 24px; font-weight: bold; }
+    .category-card.selected .check-circle::after { content: '✓'; }
+
+    .category-name { font-size: 18px; font-weight: bold; color: #222; margin-bottom: 8px; padding-right: 30px; }
     
     .progress-info { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #666; font-weight: bold; margin-bottom: 8px; }
     .progress-bar-bg { width: 100%; height: 12px; background-color: #e9ecef; border-radius: 6px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
     .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #007aff, #0056b3); width: 0%; transition: width 0.8s ease-in-out; border-radius: 6px; }
     .score-badge { background-color: #e6f2ff; color: #0056b3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 900; }
+
+    /* ✅ 퀴즈 시작 고정 버튼 */
+    .sticky-bottom-btn { position: sticky; bottom: 20px; background-color: #ccc; color: white; border: none; padding: 18px 20px; font-size: 18px; border-radius: 12px; cursor: not-allowed; width: 100%; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 25px; transition: all 0.3s; z-index: 10; }
+    .sticky-bottom-btn.ready { background-color: #28a745; cursor: pointer; box-shadow: 0 6px 15px rgba(40,167,69,0.3); animation: bounce 1s infinite alternate; }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
 
     .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; color: #555; }
     .back-btn { background: none; border: none; font-size: 16px; color: #0056b3; cursor: pointer; font-weight: bold; }
@@ -92,7 +104,6 @@
     <div class="category-title">📊 학습결과</div>
     <div id="stats-card-container"></div>
 
-    <!-- ✅ 새롭게 추가된 문제 수 선택 영역 -->
     <div class="category-title">⚙️ 출제 문제 수 선택</div>
     <div class="q-count-container">
       <button class="q-count-btn active" id="btn-count-10" onclick="setQuestionCount(10)">10개</button>
@@ -101,16 +112,23 @@
       <button class="q-count-btn" id="btn-count-all" onclick="setQuestionCount('ALL')">전체</button>
     </div>
 
-    <div class="category-title">📚 통합사회 내신 퀴즈</div>
+    <div class="category-title" style="display:flex; justify-content:space-between; align-items:flex-end; padding-right:10px;">
+      <span>📚 통합사회 단원 (중복 선택 가능)</span>
+    </div>
     <div id="category-list"></div>
+
+    <!-- ✅ 퀴즈 시작 플로팅 버튼 -->
+    <button id="start-mixed-btn" class="sticky-bottom-btn" onclick="startMixedQuiz()">단원을 선택해주세요</button>
   </div>
 
   <!-- 🔵 퀴즈 화면 -->
   <div id="quiz-screen" class="screen">
     <div class="quiz-header">
-      <button class="back-btn" onclick="returnToDashboard()">← 뒤로가기</button>
+      <button class="back-btn" onclick="returnToDashboard()">← 중단하기</button>
       <div id="quiz-progress-text">1 / 10</div>
     </div>
+    <!-- 출처(단원명) 표시 -->
+    <div id="quiz-source-tag" style="text-align:center; color:#0056b3; font-size:12px; font-weight:bold; margin-bottom:5px;"></div>
     <div id="question-box">문제를 불러오는 중...</div>
     <div id="options-container"></div>
     <div id="feedback"></div>
@@ -149,7 +167,6 @@
   </div>
 
   <script>
-    // ✅ 4개 단원으로 확장된 데이터베이스
     const quizDatabase = {
       "ch1": {
         title: "1. 인권 보장과 헌법",
@@ -201,8 +218,13 @@
     let wrongNotes = JSON.parse(localStorage.getItem('sntWrongNotes')) || {};
     let quizHistory = JSON.parse(localStorage.getItem('sntQuizHistory')) || [];
 
-    // ✅ 사용자가 선택한 문제 수 변수 (기본값 10개)
     let selectedQuestionCount = 10; 
+    let selectedCategories = []; // ✅ 다중 선택된 단원들을 저장하는 배열
+
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let sessionCorrectQuestions = []; 
 
     document.addEventListener("DOMContentLoaded", () => {
       const savedName = localStorage.getItem('sntStudentName');
@@ -211,13 +233,6 @@
       }
     });
 
-    let currentCategoryId = "";
-    let currentQuestions = [];
-    let currentIndex = 0;
-    let score = 0;
-    let sessionCorrectQuestions = []; 
-
-    // ✅ 문제 수 선택 버튼 동작 함수
     function setQuestionCount(count) {
       selectedQuestionCount = count;
       document.querySelectorAll('.q-count-btn').forEach(btn => btn.classList.remove('active'));
@@ -226,6 +241,33 @@
       else if(count === 30) document.getElementById('btn-count-30').classList.add('active');
       else if(count === 50) document.getElementById('btn-count-50').classList.add('active');
       else if(count === 'ALL') document.getElementById('btn-count-all').classList.add('active');
+    }
+
+    // ✅ 카드를 누를 때마다 선택/해제 토글
+    function toggleCategory(id, cardElement) {
+      const idx = selectedCategories.indexOf(id);
+      if(idx > -1) {
+        selectedCategories.splice(idx, 1);
+        cardElement.classList.remove('selected');
+      } else {
+        selectedCategories.push(id);
+        cardElement.classList.add('selected');
+      }
+      updateStartButton();
+    }
+
+    // ✅ 하단 시작 버튼 상태 업데이트
+    function updateStartButton() {
+      const btn = document.getElementById('start-mixed-btn');
+      if(selectedCategories.length === 0) {
+        btn.textContent = "단원을 1개 이상 선택해주세요";
+        btn.classList.remove('ready');
+        btn.disabled = true;
+      } else {
+        btn.textContent = `${selectedCategories.length}개 단원 퀴즈 시작 ▶`;
+        btn.classList.add('ready');
+        btn.disabled = false;
+      }
     }
 
     function renderStatsCard() {
@@ -322,15 +364,23 @@
       renderStatsCard();
       const listContainer = document.getElementById('category-list');
       listContainer.innerHTML = '';
+      
+      // 화면 그릴 때 선택 배열 초기화
+      selectedCategories = [];
+      updateStartButton();
+
       for (const [id, data] of Object.entries(quizDatabase)) {
         const totalQs = data.questions.length;
         const masteredQs = studentProgress[id] ? studentProgress[id].length : 0;
         const percentage = totalQs > 0 ? Math.round((masteredQs / totalQs) * 100) : 0;
+        
         const card = document.createElement('div');
         card.className = 'category-card';
-        card.onclick = () => startQuiz(id);
+        // 클릭 시 바로 시작하지 않고 toggle 함수 실행
+        card.onclick = function() { toggleCategory(id, this); };
         
         card.innerHTML = `
+          <div class="check-circle"></div>
           <div class="category-name">${data.title}</div>
           <div class="progress-info">
             <span>도감 채우기: ${masteredQs} / ${totalQs}</span>
@@ -344,7 +394,8 @@
       }
     }
 
-    function startQuiz(categoryId) {
+    // ✅ 다중 단원 통합 출제 로직
+    function startMixedQuiz() {
       const nameInput = document.getElementById('student-name').value.trim();
       if (!nameInput) {
         alert("퀴즈를 시작하기 전에 이름을 꼭 입력해주세요! 👨‍🏫");
@@ -352,35 +403,38 @@
         return;
       }
       
-      localStorage.setItem('sntStudentName', nameInput);
-      currentCategoryId = categoryId;
-      
-      const allCategoryQuestions = [...quizDatabase[categoryId].questions];
-      const totalAvailable = allCategoryQuestions.length;
-      
-      // 출제할 목표 문제 수 계산 (사용자 선택 반영)
-      let targetCount = selectedQuestionCount === 'ALL' ? totalAvailable : selectedQuestionCount;
-      
-      // 만약 해당 단원의 전체 문제 수가 선택한 문제 수보다 적으면 가지고 있는 문제 수까지만 출제
-      if (targetCount > totalAvailable) {
-        targetCount = totalAvailable;
-      }
+      if(selectedCategories.length === 0) return; // 방어 코드
 
-      // 오답 복습 문제 추출 (전체 목표 문제 수의 20%를 오답으로 구성)
-      const currentCategoryWrongQs = Object.values(wrongNotes)
-        .filter(note => note.categoryId === categoryId)
-        .map(note => note.question);
-        
-      const shuffledWrongQs = currentCategoryWrongQs.sort(() => Math.random() - 0.5);
+      localStorage.setItem('sntStudentName', nameInput);
       
-      // 오답 문제 할당량 (선택한 문제 수의 20% 적용, 내림)
+      let allMixedQuestions = [];
+      let allMixedWrongQTexts = [];
+
+      // 선택된 모든 단원의 문제와 오답을 하나의 큰 바구니(배열)에 담기
+      selectedCategories.forEach(catId => {
+        // 나중에 맞았을 때 어떤 단원인지 알기 위해 categoryId 라벨을 붙여줍니다.
+        const catQs = quizDatabase[catId].questions.map(q => ({ ...q, categoryId: catId, categoryTitle: quizDatabase[catId].title }));
+        allMixedQuestions.push(...catQs);
+
+        const wrongQs = Object.values(wrongNotes)
+          .filter(note => note.categoryId === catId)
+          .map(note => note.question);
+        allMixedWrongQTexts.push(...wrongQs);
+      });
+      
+      const totalAvailable = allMixedQuestions.length;
+      let targetCount = selectedQuestionCount === 'ALL' ? totalAvailable : selectedQuestionCount;
+      if (targetCount > totalAvailable) targetCount = totalAvailable;
+
+      // 오답 문제 섞고 20% 뽑기
+      allMixedWrongQTexts.sort(() => Math.random() - 0.5);
       const targetWrongCount = Math.floor(targetCount * 0.2);
-      const selectedWrongQTexts = shuffledWrongQs.slice(0, targetWrongCount);
+      const selectedWrongQTexts = allMixedWrongQTexts.slice(0, targetWrongCount);
       
       let selectedWrongQuestions = [];
       let remainingQuestions = [];
       
-      allCategoryQuestions.forEach(qObj => {
+      allMixedQuestions.forEach(qObj => {
         if (selectedWrongQTexts.includes(qObj.q)) {
           selectedWrongQuestions.push(qObj);
         } else {
@@ -388,18 +442,17 @@
         }
       });
       
-      // 나머지 문제는 랜덤으로 섞어서 필요한 만큼만 채우기
+      // 나머지 새로운 문제들 섞고 80% 채우기
       remainingQuestions.sort(() => Math.random() - 0.5);
       const neededNormalCount = targetCount - selectedWrongQuestions.length;
       const selectedNormalQuestions = remainingQuestions.slice(0, neededNormalCount);
       
-      // 최종 문제 셋팅 및 한 번 더 섞기
       currentQuestions = [...selectedWrongQuestions, ...selectedNormalQuestions];
       currentQuestions.sort(() => Math.random() - 0.5);
       
       currentIndex = 0;
       score = 0;
-      sessionCorrectQuestions = [];
+      sessionCorrectQuestions = []; // 배열 안에 { categoryId: 'ch1', q: '질문' } 형태로 저장됩니다.
       
       switchScreen('dashboard-screen', 'quiz-screen');
       loadQuestion();
@@ -410,10 +463,15 @@
     const feedback = document.getElementById("feedback");
     const nextBtn = document.getElementById("next-btn");
     const progressText = document.getElementById("quiz-progress-text");
+    const sourceTag = document.getElementById("quiz-source-tag");
 
     function loadQuestion() {
       const currentQuiz = currentQuestions[currentIndex];
       progressText.textContent = `${currentIndex + 1} / ${currentQuestions.length}`;
+      
+      // 여러 단원이 섞여 있으므로 어떤 단원 문제인지 작게 표시해 줍니다.
+      sourceTag.textContent = `[ ${currentQuiz.categoryTitle} ]`;
+      
       questionBox.textContent = currentQuiz.q;
       optionsContainer.innerHTML = "";
       feedback.textContent = "";
@@ -432,15 +490,16 @@
       const allButtons = document.querySelectorAll(".option-btn");
       allButtons.forEach(btn => btn.disabled = true);
       const isCorrect = selectedIndex === currentQuiz.a;
-      const categoryTitle = quizDatabase[currentCategoryId].title;
-      const noteId = `${currentCategoryId}::${currentQuiz.q}`;
+      
+      // 복합 퀴즈이므로 해당 문제의 원본 소속을 찾아 저장합니다.
+      const noteId = `${currentQuiz.categoryId}::${currentQuiz.q}`;
 
       if (isCorrect) {
         clickedButton.classList.add("correct-ans");
         feedback.textContent = "⭕ 정답입니다!";
         feedback.className = "correct-text";
         score++;
-        sessionCorrectQuestions.push(currentQuiz.q); 
+        sessionCorrectQuestions.push({ categoryId: currentQuiz.categoryId, q: currentQuiz.q }); 
         delete wrongNotes[noteId];
       } else {
         clickedButton.classList.add("wrong-ans");
@@ -449,8 +508,8 @@
         feedback.className = "wrong-text";
         const prevWrongCount = wrongNotes[noteId] ? wrongNotes[noteId].wrongCount : 0;
         wrongNotes[noteId] = {
-          categoryId: currentCategoryId,
-          categoryTitle: categoryTitle,
+          categoryId: currentQuiz.categoryId,
+          categoryTitle: currentQuiz.categoryTitle,
           question: currentQuiz.q,
           correctAnswerText: currentQuiz.options[currentQuiz.a],
           wrongCount: prevWrongCount + 1,
@@ -468,24 +527,27 @@
       currentIndex++;
       if (currentIndex >= currentQuestions.length) {
         
-        if (!studentProgress[currentCategoryId]) {
-          studentProgress[currentCategoryId] = [];
-        }
-        
         let newlyCollected = 0;
-        sessionCorrectQuestions.forEach(qText => {
-          if (!studentProgress[currentCategoryId].includes(qText)) {
-            studentProgress[currentCategoryId].push(qText);
+        // 이번 판에서 맞힌 문제들을 각자 자기 단원 도감에 저장
+        sessionCorrectQuestions.forEach(item => {
+          if (!studentProgress[item.categoryId]) {
+            studentProgress[item.categoryId] = [];
+          }
+          if (!studentProgress[item.categoryId].includes(item.q)) {
+            studentProgress[item.categoryId].push(item.q);
             newlyCollected++;
           }
         });
         
         localStorage.setItem('sntQuizProgress_v2', JSON.stringify(studentProgress));
         
+        // 퀴즈 이력 기록 (여러 개 선택 시 '혼합 단원 퀴즈'로 표시)
+        const historyTitle = selectedCategories.length > 1 ? `혼합 단원 퀴즈 (${selectedCategories.length}개 챕터)` : quizDatabase[selectedCategories[0]].title;
+        
         quizHistory.push({
           date: new Date().toISOString(),
-          categoryId: currentCategoryId,
-          categoryTitle: quizDatabase[currentCategoryId].title,
+          categoryId: selectedCategories.length > 1 ? "mixed" : selectedCategories[0],
+          categoryTitle: historyTitle,
           score: score,
           total: currentQuestions.length
         });
@@ -497,12 +559,12 @@
         switchScreen('quiz-screen', 'result-screen');
 
         const studentName = document.getElementById('student-name').value.trim();
-        const catTitle = quizDatabase[currentCategoryId].title;
         
+        // ⬇️ 선생님 구글 엑셀 주소
         const googleScriptUrl = "https://script.google.com/macros/s/AKfycbyNW5S4pildU0M4TyUJwaCzapENj74Zw0-eO_DyowCZWliPgs66MfHc7Cd4SamyGzGg/exec";
 
         if (googleScriptUrl) {
-          fetch(`${googleScriptUrl}?name=${encodeURIComponent(studentName)}&category=${encodeURIComponent(catTitle)}&score=${score}&total=${currentQuestions.length}`, {
+          fetch(`${googleScriptUrl}?name=${encodeURIComponent(studentName)}&category=${encodeURIComponent(historyTitle)}&score=${score}&total=${currentQuestions.length}`, {
             mode: 'no-cors'
           }).catch(err => console.log(err));
         }
