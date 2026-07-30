@@ -23,9 +23,16 @@
 
     .category-title { font-size: 16px; font-weight: bold; color: #555; margin: 0 0 10px 10px; }
 
-    .q-count-container { display: flex; gap: 8px; margin: 0 10px 20px 10px; }
-    .q-count-btn { flex: 1; padding: 12px 0; border: 2px solid #ddd; background: white; border-radius: 10px; font-size: 14px; font-weight: bold; color: #777; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-    .q-count-btn.active { border-color: #0056b3; background-color: #e6f2ff; color: #0056b3; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,86,179,0.15); }
+    .q-count-slider { margin: 0 10px 22px; background: white; border-radius: 16px; padding: 16px 18px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 2px solid #eee; }
+    .qcs-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+    .qcs-label { font-size: 14px; font-weight: bold; color: #555; }
+    .qcs-value { font-size: 13px; color: #0056b3; font-weight: bold; white-space: nowrap; }
+    .qcs-value b { font-size: 25px; font-weight: 900; margin-right: 2px; }
+    .qcs-range { -webkit-appearance: none; appearance: none; width: 100%; height: 12px; border-radius: 6px; background: #e3e6eb; outline: none; margin: 0; display: block; touch-action: pan-y; }
+    .qcs-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 32px; height: 32px; border-radius: 50%; background: #0056b3; border: 4px solid #fff; box-shadow: 0 2px 7px rgba(0,0,0,0.3); cursor: pointer; }
+    .qcs-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #0056b3; border: 4px solid #fff; box-shadow: 0 2px 7px rgba(0,0,0,0.3); cursor: pointer; }
+    .qcs-range:active::-webkit-slider-thumb { transform: scale(1.12); }
+    .qcs-scale { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; font-weight: bold; margin-top: 9px; }
 
     .select-all-btn { background: none; border: none; color: #0056b3; font-size: 13px; font-weight: bold; cursor: pointer; padding: 0; }
 
@@ -161,11 +168,14 @@
     <div id="stats-card-container"></div>
 
     <div class="category-title">⚙️ 출제 문제 수 선택</div>
-    <div class="q-count-container">
-      <button class="q-count-btn active" id="btn-count-10" onclick="setQuestionCount(10)">10개</button>
-      <button class="q-count-btn" id="btn-count-30" onclick="setQuestionCount(30)">30개</button>
-      <button class="q-count-btn" id="btn-count-50" onclick="setQuestionCount(50)">50개</button>
-      <button class="q-count-btn" id="btn-count-all" onclick="setQuestionCount('ALL')">전체</button>
+    <div class="q-count-slider">
+      <div class="qcs-head">
+        <span class="qcs-label">바를 좌우로 움직여 정하세요</span>
+        <span class="qcs-value"><b id="qcount-value">10</b><span id="qcount-suffix">문항</span></span>
+      </div>
+      <input type="range" id="qcount-range" class="qcs-range" min="5" max="200" step="1" value="10"
+             oninput="setQuestionCount(this.value)" onchange="updateStartButton()" aria-label="출제 문제 수">
+      <div class="qcs-scale"><span>5문항</span><span><span id="qcount-max">200</span>문항 (전체)</span></div>
     </div>
 
     <div class="category-title" style="display:flex; justify-content:space-between; align-items:flex-end; padding-right:10px;">
@@ -214,7 +224,6 @@
     <div id="wrong-notes-list"></div>
     <div class="category-title">🕒 최근 학습 이력</div>
     <div id="history-list"></div>
-    <button class="action-btn" style="display:block; background-color:#dc3545; box-shadow:0 4px 0 #a71d2a; margin-bottom:40px;" onclick="resetAllData()">🗑️ 학습 기록 전체 초기화</button>
   </div>
 
   <!-- 🟠 결과 화면 -->
@@ -538,13 +547,31 @@
       return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
-    function setQuestionCount(count) {
-      selectedQuestionCount = count;
-      document.querySelectorAll('.q-count-btn').forEach(btn => btn.classList.remove('active'));
-      if (count === 10) document.getElementById('btn-count-10').classList.add('active');
-      else if (count === 30) document.getElementById('btn-count-30').classList.add('active');
-      else if (count === 50) document.getElementById('btn-count-50').classList.add('active');
-      else if (count === 'ALL') document.getElementById('btn-count-all').classList.add('active');
+    /* 출제 문제 수 — 가로 슬라이드 바 */
+    function setQuestionCount(value) {
+      const range = document.getElementById('qcount-range');
+      const max = parseInt(range.max, 10);
+      let n = parseInt(value, 10);
+      if (!Number.isFinite(n)) n = 10;
+      n = Math.min(Math.max(n, 5), max);
+      selectedQuestionCount = n;
+      if (String(range.value) !== String(n)) range.value = n;
+      document.getElementById('qcount-value').textContent = n;
+      document.getElementById('qcount-suffix').textContent = (n >= max ? '문항 (전체)' : '문항');
+      const pct = max > 5 ? ((n - 5) / (max - 5)) * 100 : 100;
+      range.style.background =
+        `linear-gradient(90deg, #0056b3 0%, #0056b3 ${pct}%, #e3e6eb ${pct}%, #e3e6eb 100%)`;
+    }
+
+    /* 선택한 단원에 맞춰 바의 최댓값을 다시 잡는다 */
+    function refreshCountSlider() {
+      const range = document.getElementById('qcount-range');
+      const totalSel = selectedCategories.reduce((s, id) => s + quizDatabase[id].questions.length, 0);
+      const totalAll = Object.values(quizDatabase).reduce((s, c) => s + c.questions.length, 0);
+      const max = Math.max(5, totalSel || totalAll);
+      range.max = max;
+      document.getElementById('qcount-max').textContent = max;
+      setQuestionCount(Math.min(selectedQuestionCount, max));
     }
 
     function toggleCategory(id, cardElement) {
@@ -580,12 +607,14 @@
         return;
       }
       if (selectedCategories.length === 0) {
+        refreshCountSlider();
         btn.textContent = "단원을 1개 이상 선택해주세요";
         btn.classList.remove('ready');
         btn.disabled = true;
       } else {
         const total = selectedCategories.reduce((s, id) => s + quizDatabase[id].questions.length, 0);
-        btn.textContent = `${selectedCategories.length}개 단원 · ${total}문항 중 출제 ▶`;
+        refreshCountSlider();
+        btn.textContent = `${selectedCategories.length}개 단원 · ${total}문항 중 ${selectedQuestionCount}문항 출제 ▶`;
         btn.classList.add('ready');
         btn.disabled = false;
       }
@@ -679,16 +708,6 @@
       }
     }
 
-    function resetAllData() {
-      if (!confirm("정답 도감·오답노트·학습 이력이 모두 지워집니다. 계속할까요?")) return;
-      [KEY_PROGRESS, KEY_STATS, KEY_WRONG, KEY_HISTORY].forEach(k => localStorage.removeItem(k));
-      studentProgress = {};
-      overallStats = { totalAnswered: 0, totalCorrect: 0 };
-      wrongNotes = {};
-      quizHistory = [];
-      renderStatsScreen();
-      alert("초기화되었습니다.");
-    }
 
     function formatDate(isoString) {
       const d = new Date(isoString);
