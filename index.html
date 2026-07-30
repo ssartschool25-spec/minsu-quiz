@@ -154,7 +154,6 @@
     <div class="header-area">
       <h1>민수네 공부방</h1>
       <p style="font-size: 17px; font-weight: 700; color: #444; white-space: nowrap; letter-spacing: -0.5px; margin: 0 0 15px 0;">어차피 외워야 할 거, 뼈 맞고 빨리 끝내자 💀</p>
-      <div style="display:inline-block; background:#e6f2ff; color:#0056b3; font-size:13px; font-weight:900; padding:5px 14px; border-radius:14px;">선화예고 1학년 한국사</div>
       <br>
       <img src="dog.jpg" alt="귀여운 강아지 쌤" class="character-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1995/1995562.png'">
     </div>
@@ -166,12 +165,12 @@
     <div class="category-title">📊 학습결과</div>
     <div id="stats-card-container"></div>
 
-    <div class="category-title">⚙️ 출제 문제 수 선택</div>
+    <div class="category-title">⚙️ 문제수</div>
     <div class="q-count-slider">
       <div class="qcs-head">
         <span class="qcs-value"><b id="qcount-value">10</b><span id="qcount-suffix">문항</span></span>
       </div>
-      <input type="range" id="qcount-range" class="qcs-range" min="5" max="200" step="1" value="10"
+      <input type="range" id="qcount-range" class="qcs-range" min="5" max="200" step="5" value="10"
              oninput="setQuestionCount(this.value)" onchange="updateStartButton()" aria-label="출제 문제 수">
       <div class="qcs-scale"><span>5문항</span><span><span id="qcount-max">200</span>문항 (전체)</span></div>
     </div>
@@ -552,6 +551,11 @@
       let n = parseInt(value, 10);
       if (!Number.isFinite(n)) n = 10;
       n = Math.min(Math.max(n, 5), max);
+      // 5문항 단위로 맞춘다 (최댓값=전체는 예외로 그대로 허용)
+      if (n !== max) {
+        n = Math.max(5, Math.round(n / 5) * 5);
+        if (n > max) n = max;
+      }
       selectedQuestionCount = n;
       if (String(range.value) !== String(n)) range.value = n;
       document.getElementById('qcount-value').textContent = n;
