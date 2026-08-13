@@ -109,8 +109,21 @@
     /* 해설 */
     #explain-box { display: none; background: #eef6ff; border: 2px solid #b8d8ff; border-radius: 12px; padding: 16px 18px; margin-top: 12px; font-size: 14.5px; line-height: 1.75; color: #1f3b5c; word-break: keep-all; white-space: pre-wrap; }
     #explain-box .exp-title { display: block; font-weight: 900; color: #0056b3; margin-bottom: 6px; font-size: 13px; }
-    #next-btn { display: none; background-color: #0056b3; color: white; border: none; padding: 15px 20px; font-size: 17px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: 900; margin-top: 14px; box-shadow: 0 4px 0 #004494; }
-    #next-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #004494; }
+    #next-btn { display: none; text-align: center; background-color: #eef4fc; color: #0056b3; border: 2px dashed #9dc0e8; padding: 14px 12px; font-size: 15px; border-radius: 12px; width: 100%; box-sizing: border-box; font-weight: 900; margin-top: 14px; animation: tapPulse 1.4s ease-in-out infinite; }
+    @keyframes tapPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+    #options-container.answered { pointer-events: none; }
+    .tap-reveal { text-align: center; background: #eef4fc; color: #0056b3; border: 2px dashed #9dc0e8; border-radius: 12px; padding: 24px 16px; font-size: 16px; font-weight: 900; line-height: 1.6; word-break: keep-all; animation: tapPulse 1.4s ease-in-out infinite; }
+    .answer-reveal { text-align: center; background: #eafaf0; border: 2px solid #28a745; border-radius: 14px; padding: 18px 16px; animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .answer-reveal .ar-label { display: inline-block; background: #28a745; color: #fff; font-size: 12px; font-weight: 900; border-radius: 8px; padding: 3px 11px; margin-bottom: 9px; letter-spacing: 1px; }
+    .answer-reveal .ar-text { display: block; font-size: 24px; font-weight: 900; color: #155724; line-height: 1.45; word-break: keep-all; }
+    .ar-alt { text-align: center; font-size: 12.5px; color: #6b8f77; margin-top: 9px; line-height: 1.55; word-break: keep-all; }
+    .selfmark-hint { text-align: center; font-size: 13px; font-weight: bold; color: #666; margin-top: 16px; }
+    .selfmark-row { display: flex; gap: 10px; margin-top: 8px; }
+    .selfmark-btn { flex: 1; border: none; padding: 17px 8px; font-size: 17px; font-weight: 900; border-radius: 12px; cursor: pointer; color: #fff; }
+    .selfmark-btn.ok { background: #0056b3; box-shadow: 0 4px 0 #003d80; }
+    .selfmark-btn.no { background: #dc3545; box-shadow: 0 4px 0 #a71d2a; }
+    .selfmark-btn:active { transform: translateY(4px); box-shadow: none; }
+    .selfmark-btn:disabled { opacity: 0.45; }
 
     .cheer-popup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
     .cheer-popup { background: white; padding: 30px; border-radius: 24px; text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.2); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-width: 80%; }
@@ -200,7 +213,7 @@
     <div id="options-container"></div>
     <div id="feedback"></div>
     <div id="explain-box"></div>
-    <button id="next-btn" onclick="nextQuestion()">다음 문제 ▶</button>
+    <div id="next-btn">👆 화면을 터치하면 다음 문제 ▶</div>
   </div>
 
   <!-- 📊 학습결과 화면 -->
@@ -1000,6 +1013,8 @@
     function onTimeUp() {
       if (answerLocked) return;
       answerLocked = true;
+      awaitingNext = false;
+      awaitingReveal = false;
 
       const fill = document.getElementById('timer-fill');
       fill.style.transition = 'none';
@@ -1373,6 +1388,9 @@
     const feedback = document.getElementById("feedback");
     const explainBox = document.getElementById("explain-box");
     const nextBtn = document.getElementById("next-btn");
+    let awaitingNext = false;      // 채점 완료 → 터치하면 다음 문제
+    let awaitingReveal = false;    // 단답형 → 터치하면 정답 공개
+    let shownAt = 0, answeredAt = 0;
     const progressText = document.getElementById("quiz-progress-text");
     const sourceTag = document.getElementById("quiz-source-tag");
 
@@ -1424,6 +1442,10 @@
       explainBox.style.display = 'none';
       explainBox.innerHTML = '';
       nextBtn.style.display = 'none';
+      awaitingNext = false;
+      awaitingReveal = false;
+      shownAt = Date.now();
+      optionsContainer.classList.remove('answered');
 
       const type = currentQuiz.type || 'single';
       if (type === 'short') renderShortInput();
@@ -1433,31 +1455,53 @@
       startTimer(calcSeconds(currentQuiz));   // ⏱️ 문제마다 새로 시작
     }
 
-    /* ── 1) 단답형 주관식 ── */
+    /* ── 1) 단답형 주관식 — 화면을 터치하면 정답이 공개되고, 스스로 채점한다 ── */
     function renderShortInput() {
-      optionsContainer.innerHTML = `
-        <input type="text" id="short-input" class="short-input" placeholder="답을 입력하세요" autocomplete="off" autocorrect="off" spellcheck="false">
-        <button type="button" id="submit-btn" class="submit-btn" onclick="submitShort()">제출하기</button>
-      `;
-      const input = document.getElementById('short-input');
-      input.addEventListener('keydown', e => { if (e.key === 'Enter') submitShort(); });
-      input.focus({ preventScroll: true });
+      optionsContainer.innerHTML =
+        '<div class="tap-reveal">🤔 답을 떠올렸으면<br>화면을 터치하세요</div>';
+      awaitingReveal = true;
     }
 
-    function submitShort() {
-      if (answerLocked) return;
-      const input = document.getElementById('short-input');
-      const val = input.value.trim();
-      if (!val) { input.focus(); return; }
-      answerLocked = true;
-      input.disabled = true;
-      document.getElementById('submit-btn').disabled = true;
-
+    function revealShort() {
+      stopTimer();
       const cq = currentQuestions[currentIndex];
-      const accepted = cq.answers && cq.answers.length ? cq.answers : [cq.answer];
-      const isCorrect = accepted.some(a => normAnswer(a) === normAnswer(val));
-      input.classList.add(isCorrect ? 'correct-ans' : 'wrong-ans');
-      finalizeAnswer(isCorrect, cq, accepted[0]);
+      const answers = cq.answers || [];
+      const main = answers[0] || '';
+      const seen = new Set([normAnswer(main)]);
+      const alts = [];
+      answers.slice(1).forEach(a => {
+        const k = normAnswer(a);
+        if (!seen.has(k)) { seen.add(k); alts.push(a); }
+      });
+
+      optionsContainer.innerHTML =
+        `<div class="answer-reveal"><span class="ar-label">정답</span>` +
+        `<span class="ar-text">${escapeHtml(main)}</span></div>` +
+        (alts.length ? `<div class="ar-alt">이렇게 답해도 정답: ${alts.map(escapeHtml).join(' · ')}</div>` : '') +
+        `<div class="selfmark-hint">스스로 채점해 주세요</div>` +
+        `<div class="selfmark-row">` +
+        `<button type="button" class="selfmark-btn ok">⭕ 알았음</button>` +
+        `<button type="button" class="selfmark-btn no">❌ 몰랐음</button>` +
+        `</div>`;
+
+      const btns = optionsContainer.querySelectorAll('.selfmark-btn');
+      btns[0].onclick = () => markShort(true, btns[0]);
+      btns[1].onclick = () => markShort(false, btns[1]);
+
+      if (cq.exp) {
+        explainBox.style.display = 'block';
+        explainBox.innerHTML = `<span class="exp-title">💡 해설</span>${escapeHtml(cq.exp)}`;
+      }
+      optionsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function markShort(known, btn) {
+      if (answerLocked) return;
+      answerLocked = true;
+      const cq = currentQuestions[currentIndex];
+      optionsContainer.querySelectorAll('.selfmark-btn').forEach(b => b.disabled = true);
+      btn.disabled = false;
+      finalizeAnswer(known, cq, (cq.answers || [''])[0], { autoNext: true });
     }
 
     /* ── 2) O·X 형 ── */
@@ -1571,7 +1615,7 @@
     }
 
     /* ── 공통 채점 마무리 ── */
-    function finalizeAnswer(isCorrect, cq, correctText) {
+    function finalizeAnswer(isCorrect, cq, correctText, opts) {
       stopTimer();
       const noteId = `${cq.categoryId}::${cq.q}`;
 
@@ -1601,21 +1645,56 @@
       if (isCorrect) overallStats.totalCorrect++;
       localStorage.setItem(KEY_STATS, JSON.stringify(overallStats));
 
-      // 오답이거나 해설이 있으면 → 해설을 보여주고 [다음] 버튼으로 넘어가게 한다
-      if (!isCorrect || cq.exp) {
-        if (cq.exp) {
-          explainBox.style.display = 'block';
-          explainBox.innerHTML = `<span class="exp-title">💡 해설</span>${escapeHtml(cq.exp)}`;
-        }
-        nextBtn.style.display = 'block';
-        if (!isCorrect) nextBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      } else {
-        setTimeout(nextQuestion, 550);
+      // 채점이 끝나면 해설을 보여 주고, 화면 아무 곳이나 터치할 때까지 기다린다
+      if (cq.exp) {
+        explainBox.style.display = 'block';
+        explainBox.innerHTML = `<span class="exp-title">💡 해설</span>${escapeHtml(cq.exp)}`;
       }
+      optionsContainer.classList.add('answered');
+      answeredAt = Date.now();
+
+      // 단답형 자기 채점처럼 이미 정답을 확인한 경우에는 곧바로 다음 문제로 넘어간다
+      if (opts && opts.autoNext) {
+        awaitingNext = false;
+        setTimeout(nextQuestion, 480);
+        return;
+      }
+
+      nextBtn.style.display = 'block';
+      awaitingNext = true;
+      if (!isCorrect) nextBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+
+    /* ── 화면 아무 곳이나 터치 → 정답 공개 / 다음 문제 ──
+       캡처 단계에서 처리하므로, 답을 고른 그 터치는 awaitingNext 가 아직 false 여서 무시된다.
+       중단하기·진행바 영역과 응원 팝업은 제외한다. */
+    function tapToAdvance(e) {
+      if (!document.getElementById('quiz-screen').classList.contains('active-screen')) return;
+      if (e.target && e.target.closest && e.target.closest('.quiz-header, #cheer-popup')) return;
+
+      if (awaitingReveal) {                       // 단답형: 첫 터치는 정답 공개
+        if (Date.now() - shownAt < 250) return;
+        awaitingReveal = false;
+        revealShort();
+        return;
+      }
+      if (!awaitingNext) return;
+      if (Date.now() - answeredAt < 250) return;
+      awaitingNext = false;
+      nextQuestion();
+    }
+    document.addEventListener('click', tapToAdvance, true);
+    document.addEventListener('keydown', e => {
+      if ((awaitingNext || awaitingReveal) && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        tapToAdvance({ target: document.body });
+      }
+    });
 
     function nextQuestion() {
       nextBtn.style.display = 'none';
+      awaitingNext = false;
+      awaitingReveal = false;
       currentIndex++;
 
       const progressPercent = (currentIndex / currentQuestions.length) * 100;
